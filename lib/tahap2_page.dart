@@ -132,63 +132,98 @@ class _Tahap2PageState extends State<Tahap2Page> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child:Column(
                         children: [
-                          const Icon(Icons.directions_car, color: Colors.redAccent),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Pilih Mobil BMW', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                RichText(
-                                  text: TextSpan(
-                                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                                    children: [
-                                      const TextSpan(text: 'Dari '),
-                                      TextSpan(text: 'BMW Seri 7', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
-                                      const TextSpan(text: ' — pilih minimal '),
-                                      const TextSpan(text: '2 model', style: TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
-                                      const TextSpan(text: ' untuk dibandingkan'),
-                                    ],
-                                  ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.directions_car,
+                                color: Colors.redAccent,
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Pilih Mobil BMW',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 4),
+
+                                    Text(
+                                      'Dari BMW Seri 7',
+                                      style: TextStyle(
+                                        color: primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 2),
+
+                                    const Text(
+                                      'Pilih minimal 2 model untuk dibandingkan',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+
+                              OutlinedButton.icon(
+                                onPressed: _toggleSelectAll,
+                                icon: Icon(
+                                  _isAllSelected
+                                      ? Icons.check_box
+                                      : Icons.check_box_outline_blank,
+                                  size: 16,
+                                ),
+                                label: const Text('Pilih Semua'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: primaryColor,
+                                ),
+                              ),
+                            ],
                           ),
-                          InkWell(
-                            onTap: _toggleSelectAll,
-                            borderRadius: BorderRadius.circular(8),
+
+                          const SizedBox(height: 16),
+
+                          Align(
+                            alignment: Alignment.centerRight,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: primaryColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: primaryColor.withOpacity(0.3)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
                               ),
-                              child: Row(
-                                children: [
-                                  Icon(_isAllSelected ? Icons.check_box : Icons.check_box_outline_blank, size: 16, color: primaryColor),
-                                  const SizedBox(width: 6),
-                                  Text('Pilih Semua', style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold)),
-                                ],
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${_selectedCars.where((e) => e).length}/4 dipilih',
+                                style: TextStyle(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text('${_selectedCars.where((e) => e).length}/4 dipilih', style: TextStyle(fontSize: 11, color: primaryColor, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
+                      )
+                                          ),
+                    const SizedBox(height: 20),
+                    
                     Divider(color: Colors.grey.shade200, height: 1),
                     const SizedBox(height: 20),
                     
@@ -242,48 +277,75 @@ class _Tahap2PageState extends State<Tahap2Page> {
                     const SizedBox(height: 16),
 
                     // TOTAL & BUTTONS KEMBALI / HITUNG
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        RichText(
-                          text: TextSpan(
-                            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                            children: [
-                              const TextSpan(text: 'Total Bobot  '),
-                              TextSpan(text: _totalInput.toInt().toString(), style: TextStyle(color: primaryColor, fontWeight: FontWeight.w900, fontSize: 18)),
-                            ],
-                          ),
-                        ),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            OutlinedButton.icon(
-                              onPressed: () {},
-                              icon: const Icon(Icons.arrow_back, size: 16),
-                              label: const Text('Kembali'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.grey[700],
-                                side: BorderSide(color: Colors.grey.shade300),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            RichText(
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                                children: [
+                                  const TextSpan(text: 'Total Bobot  '),
+                                  TextSpan(
+                                    text: _totalInput.toInt().toString(),
+                                    style: TextStyle(
+                                      color: primaryColor,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 8),
+
                             ElevatedButton(
                               onPressed: () {},
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor.withOpacity(0.5), // Dibuat sedikit pudar seperti di gambar (disabled)
+                                backgroundColor: primaryColor.withOpacity(0.5),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               child: const Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.calculate, size: 16),
                                   SizedBox(width: 6),
-                                  Text('Hitung Smart', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(
+                                    'Hitung Smart',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                           ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.arrow_back, size: 16),
+                            label: const Text('Kembali'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.grey[700],
+                              side: BorderSide(color: Colors.grey.shade300),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -571,8 +633,9 @@ class _Tahap2PageState extends State<Tahap2Page> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            runSpacing: 12,
             children: [
               Flexible(child: Text(title, style: TextStyle(color: Colors.grey[700], fontSize: 13), overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 8),

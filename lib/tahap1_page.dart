@@ -143,42 +143,51 @@ class _Tahap1PageState extends State<Tahap1Page> {
                     const SizedBox(height: 16),
 
                     // TOTAL & BUTTONS
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        RichText(
-                          text: TextSpan(
-                            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                            children: [
-                              const TextSpan(text: 'Total Input  '),
-                              TextSpan(text: _totalInput.toInt().toString(), style: TextStyle(color: primaryColor, fontWeight: FontWeight.w900, fontSize: 18)),
-                            ],
-                          ),
-                        ),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            OutlinedButton.icon(
-                              onPressed: () {},
-                              icon: const Icon(Icons.redo, size: 16),
-                              label: const Text('Lewati'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.grey[700],
-                                side: BorderSide(color: Colors.grey.shade300),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            RichText(
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                                children: [
+                                  const TextSpan(text: 'Total Input  '),
+                                  TextSpan(
+                                    text: _totalInput.toInt().toString(),
+                                    style: TextStyle(
+                                      color: primaryColor,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 8),
+
                             ElevatedButton(
                               onPressed: () {},
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryColor,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               child: const Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('Hitung Seri', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(
+                                    'Hitung Seri',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   SizedBox(width: 6),
                                   Icon(Icons.arrow_forward, size: 16),
                                 ],
@@ -186,8 +195,28 @@ class _Tahap1PageState extends State<Tahap1Page> {
                             ),
                           ],
                         ),
+
+                        const SizedBox(height: 12),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.redo, size: 16),
+                            label: const Text('Lewati'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.grey[700],
+                              side: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
-                    ),
+                    )   
                   ],
                 ),
               ),
