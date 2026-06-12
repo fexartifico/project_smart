@@ -213,6 +213,49 @@ class ApiService {
   return null;
 }
 
+    Future<List<dynamic>> getRiwayat() async {
+    final token = await getToken();
+    if (token == null) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/riwayat'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      print('Error getRiwayat: $e');
+      return [];
+    }
+  }
+
+  Future<bool> deleteRiwayat(int id) async {
+    final token = await getToken();
+    if (token == null) return false;
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/riwayat/$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error deleteRiwayat: $e');
+      return false;
+    }
+  }
+
   // --- SPK TAHAP 2 ---
   Future<Map<String, dynamic>?> getKriteriaTahap2(int seriId) async {
     final response = await http.get(Uri.parse('$baseUrl/kriteria/tahap2?seri_id=$seriId'), headers: {'Accept': 'application/json'});
@@ -245,5 +288,8 @@ class ApiService {
   }
 
   return null;
+
+  
+
 }
 }

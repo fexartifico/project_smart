@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import 'detail_mobil_page.dart';
 
 class DataMobilPage extends StatefulWidget {
   const DataMobilPage({super.key});
@@ -280,6 +281,7 @@ class _DataMobilPageState extends State<DataMobilPage> {
                           : Column(
                                 children: _filteredMobil.map((mobil) {
                                   return _buildCarCard(
+                                    rawData: mobil,
                                     // Mengambil alias 'seri_nama' dari hasil join di Laravel kamu
                                     imagePath: mobil['gambar'] ?? 'default_bmw.jpg',
                                     series: mobil['seri_nama'] ?? 'BMW Seri', 
@@ -449,6 +451,7 @@ class _DataMobilPageState extends State<DataMobilPage> {
   // ========================
 
   Widget _buildCarCard({
+    required Map<String, dynamic> rawData,
     required String imagePath,
     required String series,
     required String name,
@@ -476,9 +479,9 @@ class _DataMobilPageState extends State<DataMobilPage> {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.network(
+            child: Image.asset(
               // Konstruksi URL: sesuaikan folder tempat menyimpan gambar di Laravel (public/images)
-              'http://10.0.2.2:8000/images/mobil/$imagePath', 
+              'images/$imagePath',
               width: double.infinity,
               height: 180,
               fit: BoxFit.cover,
@@ -533,18 +536,29 @@ class _DataMobilPageState extends State<DataMobilPage> {
                 const SizedBox(height: 20),
 
                 SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: Icon(Icons.visibility, size: 16, color: Colors.grey[700]),
-                    label: Text('Lihat detail', style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.bold)),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
+  width: double.infinity,
+  child: OutlinedButton.icon(
+    onPressed: () {
+      // ==========================================
+      // TAMBAHKAN NAVIGASI KE HALAMAN DETAIL DI SINI
+      // ==========================================
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          // Pastikan kamu menggunakan variabel 'rawData' (atau nama variabel Map data mobilmu)
+          builder: (context) => DetailMobilPage(mobil: rawData),
+        ),
+      );
+    },
+    icon: Icon(Icons.visibility, size: 16, color: Colors.grey[700]),
+    label: Text('Lihat detail', style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.bold)),
+    style: OutlinedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      side: BorderSide(color: Colors.grey.shade300),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  ),
+),
               ],
             ),
           ),

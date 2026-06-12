@@ -9,7 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'api_service.dart';
 import 'bengkel_page.dart';
-
+import 'riwayat_page.dart';
 
 
 class MainLayout extends StatefulWidget {
@@ -82,6 +82,7 @@ class _MainLayoutState extends State<MainLayout> {
     DataMobilPage(),
     Tahap1Page(),
     BengkelPage(),
+    RiwayatPage(),
     LoginPage(), 
   ];
 
@@ -251,6 +252,7 @@ class _MainLayoutState extends State<MainLayout> {
                   _buildDrawerItem(1, Icons.directions_car_rounded, 'Data Mobil', const Color(0xFFF59E0B)),
                   _buildDrawerItem(2, Icons.calculate_rounded, 'Tahap 1: Hitung', const Color(0xFF10B981)),
                   _buildDrawerItem(3, Icons.build_circle_rounded, 'Bengkel BMW', const Color(0xFF8B5CF6)),
+                  _buildDrawerItem(4, Icons.history_rounded, 'Riwayat Analisis', const Color(0xFFEC4899)),
                   
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -259,7 +261,7 @@ class _MainLayoutState extends State<MainLayout> {
                   
                   // Sebelumnya: if (user == null)
                     if (!_isLoggedIn)
-                      _buildDrawerItem(4, Icons.person, 'Login / Daftar', const Color(0xFF64748B))
+                      _buildDrawerItem(5, Icons.person, 'Login / Daftar', const Color(0xFF64748B))
                     else
   // biarkan tombol InkWell logout yang lama tetap ada di bawahnya
                 Padding(

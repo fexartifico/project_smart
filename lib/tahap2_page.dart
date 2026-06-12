@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import 'data_mobil_page.dart';
+import 'hasil_analisis_page.dart';
 
 
 class Tahap2Page extends StatefulWidget {
@@ -358,6 +360,7 @@ Future<void> _hitungSmart() async {
                               index,
                               mobil['nama_lengkap'],
                               mobil['tahun'].toString(),
+                              mobil['gambar'],
                             );
 
                           },
@@ -618,30 +621,42 @@ Future<void> _hitungSmart() async {
                         const SizedBox(height: 8),
                         // Tombol Simpan & Lihat Detail
                         SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              // TODO: navigasi ke halaman detail hasil
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Hasil berhasil disimpan!')),
-                              );
-                            },
-                            icon: const Icon(Icons.check_circle_outline, size: 18),
-                            label: const Text(
-                              'Simpan & Lihat Detail Hasil',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
+  width: double.infinity,
+  child: ElevatedButton.icon(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HasilAnalisisPage(
+            seriNama: widget.seriNama,
+            hasilSmart: _hasilSmart!,
+            bobot: {
+              'harga': _harga,
+              'servis': _biaya,
+              'sperpart': _sukuCadang,
+              'durabilitas': _kehandalan,
+              'bahan_bakar': _efisiensi,
+            },
+          ),
+        ),
+      );
+    },
+    icon: const Icon(Icons.check_circle_outline, size: 18),
+    label: const Text(
+      'Simpan & Lihat Detail Hasil',
+      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+    ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF10B981),
+      foregroundColor: Colors.white,
+      elevation: 0,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+    ),
+  ),
+),
                       ],
                     ),
               ),
@@ -846,7 +861,7 @@ Future<void> _hitungSmart() async {
 }
 
   // Helper Widget untuk Card Pilihan Mobil
-  Widget _buildSelectCarCard(int index, String name, String year) {
+  Widget _buildSelectCarCard(int index, String name, String year,String imagePath) {
     
     bool isSelected =
     index < _selectedCars.length
@@ -876,7 +891,7 @@ Future<void> _hitungSmart() async {
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(14)), // Dikurangi sedikit biar pas dengan border
               child: Image.asset(
-                'images/ilusi_bmw.png', 
+                'images/$imagePath', 
                 width: double.infinity,
                 height: 90,
                 fit: BoxFit.cover,
