@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  url_launcher: ^6.3.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -37,6 +38,8 @@ dependencies:
   firebase_core: ^4.10.0
   firebase_auth: ^6.5.2
   google_sign_in: ^6.2.0
+  http: ^1.6.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +67,40 @@ flutter:
   assets:
     - images/ilusi_bmw.png
     - images/logo_google1.png
+    # - images/mobil/Seri2-F22-218i.jpg
+    # - images/mobil/Seri2-F22-220i.jpg
+    # - images/mobil/Seri2-F40-220i.jpg
+    # - images/mobil/Seri2-F44-218i.jpg
+    # - images/mobil/Seri2-F45-225xe.jpg
+    # - images/mobil/Seri2-U06-218i.jpg
+
+    # - images/mobil/Seri3-E46.jpg
+    # - images/mobil/Seri3-E90.jpg
+    # - images/mobil/Seri3-F30-320i.jpg
+    # - images/mobil/Seri3-F30-330i.jpg
+    # - images/mobil/Seri3-G20-320i.jpg
+    # - images/mobil/Seri3-G20-330e.jpg
+
+    # - images/mobil/Seri4-F32-420i.jpg
+    # - images/mobil/Seri4-F32-428i.jpg
+    # - images/mobil/Seri4-F36-420i.jpg
+    # - images/mobil/Seri4-G22-420i.jpg
+    # - images/mobil/Seri4-G26-430i.jpg
+    # - images/mobil/Seri4-G26-i4.jpg
+
+    # - images/mobil/Seri5-E60-520i.jpg
+    # - images/mobil/Seri5-F10-520i.jpg
+    # - images/mobil/Seri5-F10-528i.jpg
+    # - images/mobil/Seri5-G30-520i.jpg
+    # - images/mobil/Seri5-G30-530i.jpg
+    # - images/mobil/Seri5-G60-i5.jpg
+
+    # - images/mobil/Seri7-E66-730Li.jpg
+    # - images/mobil/Seri7-F02-730Li.jpg
+    # - images/mobil/Seri7-F02-740Li.jpg
+    # - images/mobil/Seri7-G12-730Li.jpg
+    # - images/mobil/Seri7-G12-740Li.jpg
+    # - images/mobil/Seri7-G70-i7-eDrive50.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

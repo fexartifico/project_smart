@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'main_layout.dart';
+import 'api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,6 +30,92 @@ class _LoginPageState extends State<LoginPage>
   final _registerConfirmController = TextEditingController();
   bool _registerPasswordVisible = false;
   bool _registerConfirmVisible = false;
+
+  // Fungsi untuk memproses Register API
+  Future<void> _processLogin() async {
+    final email = _loginEmailController.text;
+    final password = _loginPasswordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email dan password wajib diisi!')),
+      );
+      return;
+    }
+
+    // Tampilkan loading muter-muter
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // Panggil API
+    final success = await ApiService().login(email, password);
+    
+    if (!mounted) return;
+    Navigator.pop(context); // Tutup loading
+
+    if (success) {
+      // Jika berhasil, arahkan ke MainLayout
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainLayout()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login gagal. Cek email & password kamu.')),
+      );
+    }
+  }
+
+  // ==========================================
+  // FUNGSI PROSES REGISTER
+  // ==========================================
+  Future<void> _processRegister() async {
+    final name = _registerNameController.text;
+    final email = _registerEmailController.text;
+    final password = _registerPasswordController.text;
+    final confirmPassword = _registerConfirmController.text;
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Semua kolom wajib diisi!')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password dan Konfirmasi tidak sama!')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // Cari baris ini di dalam _processRegister()
+    final success = await ApiService().register(name, email, password); // Hapus confirmPassword
+    
+    if (!mounted) return;
+    Navigator.pop(context);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Daftar berhasil! Silakan masuk.')),
+      );
+      // Geser otomatis ke tab 'Masuk' (index 0)
+      _tabController.animateTo(0); 
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Daftar gagal. Coba lagi.')),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -296,7 +383,7 @@ class _LoginPageState extends State<LoginPage>
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: _processLogin,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
@@ -447,7 +534,7 @@ class _LoginPageState extends State<LoginPage>
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _processRegister,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,

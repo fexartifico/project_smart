@@ -7,6 +7,8 @@ import 'tahap2_page.dart';
 import 'login_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'api_service.dart';
+import 'bengkel_page.dart';
 
 
 
@@ -21,27 +23,65 @@ class _MainLayoutState extends State<MainLayout> {
 
   int _selectedIndex = 0;
   final Color primaryColor = const Color(0xFF5A58F2);
-  User? get user => FirebaseAuth.instance.currentUser;
-
+  
+  bool _isLoggedIn = false;
+  String _userName = 'Guest';
+  String _userEmail = '';
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus(); // Cek status login saat halaman pertama dibuka
+  }
+  Future<void> _checkLoginStatus() async {
+    // 1. Cek Login Google (Firebase)
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      setState(() {
+        _isLoggedIn = true;
+        _userName = firebaseUser.displayName ?? 'User Google';
+        _userEmail = firebaseUser.email ?? '';
+      });
+      return;
+    }
+  final apiUser = await ApiService().getUserProfile();
+    if (apiUser != null) {
+      setState(() {
+        _isLoggedIn = true;
+        _userName = apiUser['name'] ?? 'User';
+        _userEmail = apiUser['email'] ?? '';
+      });
+    }
+  }
   Future<void> _logout() async {
+    // Keluar dari Google & Firebase
     await GoogleSignIn().signOut();
     await FirebaseAuth.instance.signOut();
 
+    // Keluar dari Laravel & Hapus Token
+    await ApiService().logout();
+
     setState(() {
+      _isLoggedIn = false;
+      _userName = 'Guest';
+      _userEmail = '';
       _selectedIndex = 0;
     });
 
     if (mounted) {
-      Navigator.pop(context);
+      Navigator.pop(context); // Tutup sidebar
+      // Opsional: Bawa user kembali ke halaman Login otomatis
+      // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
     }
   }
 
+  
+
   // Daftar halaman yang akan berubah saat menu sidebar diklik
-  static const List<Widget> _widgetOptions = <Widget>[
+  static final List<Widget> _widgetOptions = <Widget>[
     HomePage(),
     DataMobilPage(),
     Tahap1Page(),
-    Tahap2Page(),
+    BengkelPage(),
     LoginPage(), 
   ];
 
@@ -55,6 +95,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -135,32 +176,24 @@ class _MainLayoutState extends State<MainLayout> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          user != null
-                              ? 'Halo, ${user!.displayName ?? "User"}'
-                              : 'Halo, Guest',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black87,
-                            letterSpacing: -0.5,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-
-                        if (user != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            user!.email ?? '',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[600],
+                        // Sebelumnya: user != null ? 'Halo, ${user!.displayName}' : 'Halo, Guest'
+                            Text(
+                              _isLoggedIn ? 'Halo, $_userName' : 'Halo, Guest',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black87, letterSpacing: -0.5),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+
+                        // Sebelumnya: if (user != null) ...
+                          if (_isLoggedIn) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              _userEmail,
+                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
 
                         const SizedBox(height: 6),
 
@@ -188,13 +221,10 @@ class _MainLayoutState extends State<MainLayout> {
                                 ),
                               ),
                               const SizedBox(width: 6),
+                              // Sebelumnya: Text(user != null ? 'Online' : 'Guest', ...
                               Text(
-                                user != null ? 'Online' : 'Guest',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.green.shade700,
-                                ),
+                                _isLoggedIn ? 'Online' : 'Guest',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.green.shade700),
                               ),
                             ],
                           ),
@@ -220,21 +250,18 @@ class _MainLayoutState extends State<MainLayout> {
                   _buildDrawerItem(0, Icons.home_rounded, 'Home', const Color(0xFF3B82F6)),
                   _buildDrawerItem(1, Icons.directions_car_rounded, 'Data Mobil', const Color(0xFFF59E0B)),
                   _buildDrawerItem(2, Icons.calculate_rounded, 'Tahap 1: Hitung', const Color(0xFF10B981)),
-                  _buildDrawerItem(3, Icons.analytics_rounded, 'Tahap 2: Analisis', const Color(0xFF8B5CF6)),
+                  _buildDrawerItem(3, Icons.build_circle_rounded, 'Bengkel BMW', const Color(0xFF8B5CF6)),
                   
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     child: Divider(color: Color(0xFFEEEEEE), thickness: 1),
                   ),
                   
-                  if (user == null)
-                _buildDrawerItem(
-                  4,
-                  Icons.person,
-                  'Login / Daftar',
-                  const Color(0xFF64748B),
-                )
-              else
+                  // Sebelumnya: if (user == null)
+                    if (!_isLoggedIn)
+                      _buildDrawerItem(4, Icons.person, 'Login / Daftar', const Color(0xFF64748B))
+                    else
+  // biarkan tombol InkWell logout yang lama tetap ada di bawahnya
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: InkWell(

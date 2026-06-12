@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
+
 
 class Tahap2Page extends StatefulWidget {
-  const Tahap2Page({super.key});
+
+  final int seriId;
+  final String seriNama;
+
+  const Tahap2Page({
+    super.key,
+    required this.seriId,
+    required this.seriNama,
+  });
 
   @override
   State<Tahap2Page> createState() => _Tahap2PageState();
-}
+} 
+
 
 class _Tahap2PageState extends State<Tahap2Page> {
   final Color primaryColor = const Color(0xFF5A58F2);
+  List<dynamic> _kodeBodis = [];
+
+  
 
   // Nilai default untuk slider Tahap 2
   double _harga = 20;
@@ -20,7 +34,9 @@ class _Tahap2PageState extends State<Tahap2Page> {
   double get _totalInput => _harga + _biaya + _sukuCadang + _kehandalan + _efisiensi;
 
   // Status Checkbox untuk 4 mobil contoh
-  List<bool> _selectedCars = [false, false, false, false];
+  List<bool> _selectedCars = [];
+  bool _isLoading = false;
+  Map<String, dynamic>? _hasilSmart; // Menyimpan hasil dari API
   bool get _isAllSelected => _selectedCars.every((element) => element);
 
   void _toggleSelectAll() {
@@ -31,6 +47,105 @@ class _Tahap2PageState extends State<Tahap2Page> {
       }
     });
   }
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+  Future<void> _loadData() async {
+
+  final data =
+      await ApiService().getTahap2(widget.seriId);
+
+  if (data != null) {
+
+    setState(() {
+
+      _kodeBodis = data['kode_bodis'];
+
+      _selectedCars =
+          List.generate(_kodeBodis.length, (_) => false);
+
+    });
+
+  }
+  
+}
+Future<void> _hitungSmart() async {
+
+  final selectedIds = <int>[];
+
+  for (int i = 0; i < _selectedCars.length; i++) {
+    if (_selectedCars[i]) {
+      selectedIds.add(_kodeBodis[i]['id']);
+    }
+  }
+
+  if (selectedIds.length < 2) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Pilih minimal 2 mobil'),
+      ),
+    );
+    return;
+  }
+
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+
+    final hasil = await ApiService().postHitungTahap2({
+      'seri_id': widget.seriId,
+      'selected_mobil': selectedIds,
+      'bobot': {
+        'harga': _harga,
+        'servis': _biaya,
+        'sperpart': _sukuCadang,
+        'durabilitas': _kehandalan,
+        'bahan_bakar': _efisiensi,
+      },
+    });
+
+    print('Selected: $selectedIds');
+    print('Seri: ${widget.seriId}');
+    print('Hasil: $hasil');
+
+    if (hasil != null) {
+      setState(() {
+        _hasilSmart = hasil;
+      });
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal menghitung. Periksa koneksi atau coba lagi.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+
+  } catch (e) {
+    print('Error _hitungSmart: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi error: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  } finally {
+
+    setState(() {
+      _isLoading = false;
+    });
+
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -159,13 +274,13 @@ class _Tahap2PageState extends State<Tahap2Page> {
                                     const SizedBox(height: 4),
 
                                     Text(
-                                      'Dari BMW Seri 7',
-                                      style: TextStyle(
-                                        color: primaryColor,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
+                                        'Dari ${widget.seriNama}',
+                                        style: TextStyle(
+                                          color: primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
                                       ),
-                                    ),
 
                                     const SizedBox(height: 2),
 
@@ -210,7 +325,7 @@ class _Tahap2PageState extends State<Tahap2Page> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                '${_selectedCars.where((e) => e).length}/4 dipilih',
+                               '${_selectedCars.where((e) => e).length}/${_kodeBodis.length} dipilih',
                                 style: TextStyle(
                                   color: primaryColor,
                                   fontWeight: FontWeight.bold,
@@ -233,13 +348,21 @@ class _Tahap2PageState extends State<Tahap2Page> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       physics: const BouncingScrollPhysics(),
                       child: Row(
-                        children: [
-                          _buildSelectCarCard(0, 'BMW Seri 7 (F02 730Li)', '2012–2015'),
-                          _buildSelectCarCard(1, 'BMW Seri 7 (F02 740Li)', '2012–2015'),
-                          _buildSelectCarCard(2, 'BMW Seri 7 (G12 730Li)', '2016–2019'),
-                          _buildSelectCarCard(3, 'BMW Seri 7 (G12 740Li)', '2019–2022'),
-                        ],
-                      ),
+                        children: List.generate(
+                          _kodeBodis.length,
+                          (index) {
+
+                            final mobil = _kodeBodis[index];
+
+                            return _buildSelectCarCard(
+                              index,
+                              mobil['nama_lengkap'],
+                              mobil['tahun'].toString(),
+                            );
+
+                          },
+                        ),
+                      )
                     ),
                   ],
                 ),
@@ -304,16 +427,26 @@ class _Tahap2PageState extends State<Tahap2Page> {
                             ),
 
                             ElevatedButton(
-                              onPressed: () {},
+                              onPressed:  _isLoading ? null : _hitungSmart,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor.withOpacity(0.5),
+                                backgroundColor: _isLoading ? primaryColor.withOpacity(0.4) : primaryColor,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Row(
+                              child: _isLoading
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Row(
+                              
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.calculate, size: 16),
@@ -360,22 +493,157 @@ class _Tahap2PageState extends State<Tahap2Page> {
               _buildSideCard(
                 title: 'HASIL RANKING SMART',
                 iconTitle: Icons.emoji_events,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Column(
+                child: _hasilSmart == null
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            const Icon(Icons.smart_toy, size: 40, color: Color(0xFF5A58F2)),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Hasil SMART akan muncul setelah Anda memilih BMW\ndan menekan tombol Hitung Smart.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey[400], fontSize: 13, height: 1.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Column(
                       children: [
-                        const Icon(Icons.smart_toy, size: 40, color: Color(0xFF5A58F2)), // Robot placeholder
-                        const SizedBox(height: 16),
-                        Text(
-                          'Hasil SMART akan muncul setelah Anda memilih BMW\ndan menekan tombol Hitung Smart.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey[400], fontSize: 13, height: 1.5),
+                        // Ranking list dengan medal + progress bar
+                        ...List.generate(
+                          (_hasilSmart!['ranked'] as List).length,
+                          (index) {
+                            final ranked = _hasilSmart!['ranked'] as List;
+                            final item = ranked[index];
+                            final rank = (item['rank'] as num).toInt();
+                            final skor = (item['skor'] as num).toDouble();
+                            // Skor tertinggi untuk normalisasi progress bar
+                            final maxSkor = (ranked.first['skor'] as num).toDouble();
+                            final persen = maxSkor > 0 ? (skor / maxSkor) : 0.0;
+                            final persenText = '${(skor * 100).toStringAsFixed(2)}%';
+
+                            // Warna & icon medal per rank
+                            Color medalColor;
+                            IconData medalIcon;
+                            Color progressColor;
+                            if (rank == 1) {
+                              medalColor = const Color(0xFFFFD700); // gold
+                              medalIcon = Icons.emoji_events;
+                              progressColor = const Color(0xFF5A58F2);
+                            } else if (rank == 2) {
+                              medalColor = const Color(0xFFB0B0B0); // silver
+                              medalIcon = Icons.emoji_events;
+                              progressColor = Colors.grey.shade400;
+                            } else if (rank == 3) {
+                              medalColor = const Color(0xFFCD7F32); // bronze
+                              medalIcon = Icons.emoji_events;
+                              progressColor = Colors.orange.shade300;
+                            } else {
+                              medalColor = Colors.grey.shade300;
+                              medalIcon = Icons.directions_car;
+                              progressColor = Colors.grey.shade300;
+                            }
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: rank == 1
+                                    ? const Color(0xFF5A58F2).withOpacity(0.06)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: rank == 1
+                                      ? const Color(0xFF5A58F2).withOpacity(0.2)
+                                      : Colors.grey.shade200,
+                                ),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  // Medal icon
+                                  Icon(medalIcon, color: medalColor, size: 28),
+                                  const SizedBox(width: 12),
+                                  // Nama + tahun + progress bar
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item['nama'] ?? '-',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        if (item['tahun'] != null)
+                                          Text(
+                                            item['tahun'].toString(),
+                                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                                          ),
+                                        const SizedBox(height: 8),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: LinearProgressIndicator(
+                                            value: persen.toDouble(),
+                                            minHeight: 5,
+                                            backgroundColor: Colors.grey.shade100,
+                                            valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // Persentase skor
+                                  Text(
+                                    persenText,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 15,
+                                      color: rank == 1
+                                          ? const Color(0xFF5A58F2)
+                                          : Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        // Tombol Simpan & Lihat Detail
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              // TODO: navigasi ke halaman detail hasil
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Hasil berhasil disimpan!')),
+                              );
+                            },
+                            icon: const Icon(Icons.check_circle_outline, size: 18),
+                            label: const Text(
+                              'Simpan & Lihat Detail Hasil',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ),
               ),
 
               // ==========================================
@@ -439,83 +707,159 @@ class _Tahap2PageState extends State<Tahap2Page> {
   }
 
   // Helper Widget untuk Form Slider (Ditambah Parameter isCost untuk label Cost/Benefit)
-  Widget _buildSliderItem(String title, String description, double value, bool isCost, ValueChanged<double> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Flexible(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87), overflow: TextOverflow.ellipsis)),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isCost ? Colors.blue.shade50 : Colors.green.shade50, 
-                        borderRadius: BorderRadius.circular(4)
-                      ),
-                      child: Text(
-                        isCost ? 'Cost' : 'Benefit', 
-                        style: TextStyle(
-                          color: isCost ? primaryColor : Colors.green.shade700, 
-                          fontSize: 10, 
-                          fontWeight: FontWeight.bold
-                        )
-                      ),
-                    ),
-                  ],
+  Widget _buildSliderItem(
+  String title,
+  String description,
+  double value,
+  bool isCost,
+  ValueChanged<double> onChanged,
+) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: Colors.black87,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: isCost
+                    ? Colors.blue.shade50
+                    : Colors.green.shade50,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                isCost ? 'Cost' : 'Benefit',
+                style: TextStyle(
+                  color: isCost
+                      ? primaryColor
+                      : Colors.green.shade700,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(value.toInt().toString(), style: TextStyle(color: primaryColor, fontWeight: FontWeight.w900, fontSize: 18)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(description, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-          const SizedBox(height: 8),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: primaryColor,
-              inactiveTrackColor: Colors.grey.shade200,
-              thumbColor: primaryColor,
-              overlayColor: primaryColor.withOpacity(0.2),
-              trackHeight: 6.0,
             ),
-            child: Slider(
-              value: value,
-              min: 0,
-              max: 100,
-              divisions: 100,
-              onChanged: onChanged,
+
+            const SizedBox(width: 12),
+
+            Text(
+              value.toInt().toString(),
+              style: TextStyle(
+                color: primaryColor,
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+              ),
             ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        Text(
+          description,
+          style: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 12,
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('0', style: TextStyle(color: Colors.grey[400], fontSize: 11)),
-              Text('25', style: TextStyle(color: Colors.grey[400], fontSize: 11)),
-              Text('50', style: TextStyle(color: Colors.grey[400], fontSize: 11)),
-              Text('75', style: TextStyle(color: Colors.grey[400], fontSize: 11)),
-              Text('100', style: TextStyle(color: Colors.grey[400], fontSize: 11)),
-            ],
-          )
-        ],
-      ),
-    );
-  }
+        ),
+
+        const SizedBox(height: 8),
+
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: primaryColor,
+            inactiveTrackColor: Colors.grey.shade200,
+            thumbColor: primaryColor,
+            overlayColor: primaryColor.withOpacity(0.2),
+            trackHeight: 6,
+          ),
+          child: Slider(
+            value: value,
+            min: 0,
+            max: 100,
+            divisions: 100,
+            onChanged: onChanged,
+          ),
+        ),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '0',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              '25',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              '50',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              '75',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              '100',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   // Helper Widget untuk Card Pilihan Mobil
   Widget _buildSelectCarCard(int index, String name, String year) {
-    bool isSelected = _selectedCars[index];
+    
+    bool isSelected =
+    index < _selectedCars.length
+        ? _selectedCars[index]
+        : false;
+    
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedCars[index] = !isSelected;
-        });
+       setState(() {
+        if (index < _selectedCars.length) {
+      _selectedCars[index] = !_selectedCars[index];
+    }
+      });
       },
       child: Container(
         width: 210,
@@ -633,15 +977,31 @@ class _Tahap2PageState extends State<Tahap2Page> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            runSpacing: 12,
-            children: [
-              Flexible(child: Text(title, style: TextStyle(color: Colors.grey[700], fontSize: 13), overflow: TextOverflow.ellipsis)),
-              const SizedBox(width: 8),
-              Text(percentText, style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
-            ],
-          ),
+          Row(
+  children: [
+    Expanded(
+      child: Text(
+        title,
+        style: TextStyle(
+          color: Colors.grey[700],
+          fontSize: 13,
+        ),
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+
+    const SizedBox(width: 8),
+
+    Text(
+      percentText,
+      style: TextStyle(
+        color: primaryColor,
+        fontWeight: FontWeight.bold,
+        fontSize: 13,
+      ),
+    ),
+  ],
+),
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),

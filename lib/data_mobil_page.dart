@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
 
 class DataMobilPage extends StatefulWidget {
   const DataMobilPage({super.key});
@@ -9,13 +10,40 @@ class DataMobilPage extends StatefulWidget {
 
 class _DataMobilPageState extends State<DataMobilPage> {
   final Color primaryColor = const Color(0xFF5A58F2);
+  // Tambahkan 2 baris ini:
+  List<dynamic> _listMobil = [];
+  bool _isLoading = true;
   String _selectedFilter = 'Semua';
   int _currentPage = 1;
+  List<dynamic> get _filteredMobil {
+    if (_selectedFilter == 'Semua') {
+      return _listMobil;
+    }
+    // Misalnya tombolnya "Seri 3", dia akan mencari mobil yang 'seri_nama' nya persis "BMW Seri 3"
+    return _listMobil.where((mobil) => mobil['seri_nama'] == 'BMW $_selectedFilter').toList();
+  }
 
   final List<String> _filters = ['Semua', 'Seri 2', 'Seri 3', 'Seri 4', 'Seri 5', 'Seri 7'];
 
   final ScrollController _scrollController = ScrollController();
+  @override
+  void initState() {
+    super.initState();
+    _fetchMobilData();
+  }
 
+  Future<void> _fetchMobilData() async {
+    setState(() => _isLoading = true); // Tampilkan loading
+    
+    final data = await ApiService().getMobil();
+    
+    if (mounted) {
+      setState(() {
+        _listMobil = data;
+        _isLoading = false; // Matikan loading
+      });
+    }
+  }
   @override
   void dispose() {
     _scrollController.dispose();
@@ -225,38 +253,47 @@ class _DataMobilPageState extends State<DataMobilPage> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Menampilkan 1–3 dari 29 model',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                  ),
+                        'Menampilkan ${_filteredMobil.length} dari ${_listMobil.length} model',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
                   const SizedBox(height: 16),
 
-                  _buildCarCard(
-                    series: 'BMW Seri 2',
-                    name: 'BMW Seri 2 (F22 218i)',
-                    description: 'Menjadi gerbang paling masuk akal untuk memiliki mobil sport Eropa berkonfigurasi...',
-                    transmission: 'Automatic',
-                    bodyType: 'Coupe',
-                    fuel: 'Bensin',
-                  ),
-                  _buildCarCard(
-                    series: 'BMW Seri 2',
-                    name: 'BMW Seri 2 (F22 220i)',
-                    description: 'Membawa wujud coupe mungil yang sama gantengnya, namun dengan ekstra tenaga...',
-                    transmission: 'Automatic',
-                    bodyType: 'Coupe',
-                    fuel: 'Bensin',
-                  ),
-                  _buildCarCard(
-                    series: 'BMW Seri 2',
-                    name: 'BMW Seri 2 (F44 218i Gran)',
-                    description: 'Jawaban cerdas bagi Anda yang menginginkan kelincahan bodi mungil...',
-                    transmission: 'Automatic',
-                    bodyType: 'Gran coupe',
-                    fuel: 'Bensin',
-                  ),
+                  // Ganti bagian statis _buildCarCard di bawah teks "Menampilkan 1-3 dari 29 model" dengan ini:
 
-                  const SizedBox(height: 24),
-                  _buildPagination(),
+                  _isLoading 
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      : _listMobil.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 40.0),
+                                child: Text(
+                                  'Belum ada data mobil yang tersedia.',
+                                  style: TextStyle(color: Colors.grey[500]),
+                                ),
+                              ),
+                            )
+                          : Column(
+                                children: _filteredMobil.map((mobil) {
+                                  return _buildCarCard(
+                                    // Mengambil alias 'seri_nama' dari hasil join di Laravel kamu
+                                    imagePath: mobil['gambar'] ?? 'default_bmw.jpg',
+                                    series: mobil['seri_nama'] ?? 'BMW Seri', 
+                                    name: mobil['nama_lengkap'] ?? 'Model Tidak Diketahui',
+                                    description: mobil['deskripsi'] ?? 'Deskripsi tidak tersedia',
+                                    transmission: mobil['transmisi'] ?? 'Auto',
+                                    bodyType: mobil['tipe_bodi'] ?? 'Sedan',
+                                    fuel: mobil['bahan_bakar'] ?? 'Bensin',
+                                  );
+                                }).toList(),
+                              ),
+
+                  // const SizedBox(height: 24),
+                  // _buildPagination(),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -412,6 +449,7 @@ class _DataMobilPageState extends State<DataMobilPage> {
   // ========================
 
   Widget _buildCarCard({
+    required String imagePath,
     required String series,
     required String name,
     required String description,
@@ -438,8 +476,9 @@ class _DataMobilPageState extends State<DataMobilPage> {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.asset(
-              'images/ilusi_bmw.png', 
+            child: Image.network(
+              // Konstruksi URL: sesuaikan folder tempat menyimpan gambar di Laravel (public/images)
+              'http://10.0.2.2:8000/images/mobil/$imagePath', 
               width: double.infinity,
               height: 180,
               fit: BoxFit.cover,
@@ -447,7 +486,7 @@ class _DataMobilPageState extends State<DataMobilPage> {
                 width: double.infinity,
                 height: 180,
                 color: Colors.grey[200],
-                child: const Icon(Icons.directions_car, size: 50, color: Colors.grey),
+                child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
               ),
             ),
           ),
@@ -512,6 +551,7 @@ class _DataMobilPageState extends State<DataMobilPage> {
         ],
       ),
     );
+    
   }
 
   Widget _buildTag(IconData icon, String text, Color color) {

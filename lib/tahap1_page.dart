@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
+import 'tahap2_page.dart';
 
 class Tahap1Page extends StatefulWidget {
   const Tahap1Page({super.key});
@@ -7,8 +9,11 @@ class Tahap1Page extends StatefulWidget {
   State<Tahap1Page> createState() => _Tahap1PageState();
 }
 
+
 class _Tahap1PageState extends State<Tahap1Page> {
   final Color primaryColor = const Color(0xFF5A58F2);
+  Map<String, dynamic>? _hasilSmart;
+  bool _isLoading = false;
 
   // Nilai default untuk masing-masing kriteria
   double _funToDrive = 20;
@@ -20,6 +25,101 @@ class _Tahap1PageState extends State<Tahap1Page> {
   // Menghitung total input secara dinamis
   double get _totalInput => _funToDrive + _gengsi + _kenyamanan + _fungsionalitas + _durabilitas;
 
+  Future<void> _hitungSmart() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final hasil = await ApiService().postHitungTahap1({
+      'fun_to_drive': _funToDrive,
+      'gengsi': _gengsi,
+      'kenyamanan': _kenyamanan,
+      'fungsionalitas': _fungsionalitas,
+      'durabilitas': _durabilitas,
+    });
+
+    print('=== HASIL API TAHAP 1 ===');
+    print(hasil);
+    print('winner: ${hasil?['winner']}');
+    print('========================');
+
+    setState(() {
+      _hasilSmart = hasil;
+      _isLoading = false;
+    });
+  } // <--- INI TUTUP KURUNG UNTUK _hitungSmart YANG TADI HILANG
+
+  // ==========================================
+  // FUNGSI POP-UP PILIHAN SERI (BERDIRI SENDIRI)
+  // ==========================================
+  void _showSeriesSelector(BuildContext context) {
+    // ID ini menyesuaikan dengan id di tabel `seris` database kamu
+    final List<Map<String, dynamic>> listSeri = [
+      {'id': 1, 'nama': 'BMW Seri 2'},
+      {'id': 2, 'nama': 'BMW Seri 3'},
+      {'id': 3, 'nama': 'BMW Seri 4'},
+      {'id': 4, 'nama': 'BMW Seri 5'},
+      {'id': 5, 'nama': 'BMW Seri 7'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Pilih Seri BMW Pilihan Anda',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Langsung ke Tahap 2 untuk memilih model detail',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              ...listSeri.map((seri) {
+                return ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.directions_car, color: primaryColor, size: 20),
+                  ),
+                  title: Text(seri['nama'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.pop(context); // Tutup pop-up dulu
+                    
+                    // Pindah ke halaman Tahap 2 dan bawa ID serinya
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Tahap2Page(
+                          seriId: seri['id'], 
+                          seriNama: seri['nama'], // <--- Tambahkan baris ini!
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // @override
+  // Widget build(BuildContext context) { ...
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -170,29 +270,54 @@ class _Tahap1PageState extends State<Tahap1Page> {
                             ),
 
                             ElevatedButton(
-                              onPressed: () {},
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Hitung Seri',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                    onPressed: _isLoading
+                                        ? null
+                                        : (_hasilSmart == null
+                                            ? _hitungSmart
+                                            : () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => Tahap2Page(
+                                                      seriId: _hasilSmart!['winner']['id'],
+                                                      seriNama: _hasilSmart!['winner']['nama'],
+                                                    ),
+                                                  ),
+                                                );
+                                              }),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryColor,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Icon(Icons.arrow_forward, size: 16),
-                                ],
-                              ),
-                            ),
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                _hasilSmart == null
+                                                    ? 'Hitung Seri'
+                                                    : 'Lanjut ke Tahap 2',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              const Icon(Icons.arrow_forward, size: 16),
+                                            ],
+                                          ),
+                                  )
                           ],
                         ),
 
@@ -201,7 +326,9 @@ class _Tahap1PageState extends State<Tahap1Page> {
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              _showSeriesSelector(context);
+                            },
                             icon: const Icon(Icons.redo, size: 16),
                             label: const Text('Lewati'),
                             style: OutlinedButton.styleFrom(
@@ -225,36 +352,81 @@ class _Tahap1PageState extends State<Tahap1Page> {
               // ==========================================
               // CARD: PILIHAN ANDA
               // ==========================================
-              _buildSideCard(
-                title: 'PILIHAN ANDA',
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  child: Center(
-                    child: Text(
-                      'Klik Hitung Seri untuk melihat\nrekomendasi seri BMW',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                    ),
+             if (_hasilSmart != null)
+_buildSideCard(
+  title: 'RANKING SERI BMW',
+  subtitle: 'Urutan hasil SMART',
+  child: Column(
+    children: List.generate(
+      _hasilSmart!['ranked'].length,
+      (index) {
+        final item = _hasilSmart!['ranked'][index];
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: index == 0
+                ? Colors.amber.shade50
+                : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 14,
+                child: Text('${index + 1}'),
+              ),
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Text(
+                  item['nama'],
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+
+              Text(
+                item['skor'].toString(),
+                style: TextStyle(
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  ),
+),
 
               // ==========================================
               // CARD: BOBOT TERNORMALISASI
               // ==========================================
               _buildSideCard(
-                title: 'BOBOT TERNORMALISASI',
-                subtitle: 'Wi = wi / Σwi',
-                child: Column(
-                  children: [
-                    _buildProgressRow('Fun to Drive', _funToDrive),
-                    _buildProgressRow('Gengsi & Image Sosial', _gengsi),
-                    _buildProgressRow('Kenyamanan Kabin', _kenyamanan),
-                    _buildProgressRow('Fungsionalitas Harian', _fungsionalitas),
-                    _buildProgressRow('Durabilitas & Keandalan', _durabilitas),
-                  ],
+                  title: 'BOBOT TERNORMALISASI',
+                  subtitle: 'Wi = wi / Σwi',
+                  child: Column(
+                    children: _hasilSmart != null
+                      ? [
+                          _buildProgressRow('Fun to Drive',          (_hasilSmart!['bobot_normal']['fun_to_drive']   as num).toDouble()),
+                          _buildProgressRow('Gengsi & Image Sosial', (_hasilSmart!['bobot_normal']['gengsi']         as num).toDouble()),
+                          _buildProgressRow('Kenyamanan Kabin',      (_hasilSmart!['bobot_normal']['kenyamanan']     as num).toDouble()),
+                          _buildProgressRow('Fungsionalitas Harian', (_hasilSmart!['bobot_normal']['fungsionalitas'] as num).toDouble()),
+                          _buildProgressRow('Durabilitas & Keandalan',(_hasilSmart!['bobot_normal']['durabilitas']   as num).toDouble()),
+                        ]
+                      : [
+                          _buildProgressRow('Fun to Drive', _funToDrive),
+                          _buildProgressRow('Gengsi & Image Sosial', _gengsi),
+                          _buildProgressRow('Kenyamanan Kabin', _kenyamanan),
+                          _buildProgressRow('Fungsionalitas Harian', _fungsionalitas),
+                          _buildProgressRow('Durabilitas & Keandalan', _durabilitas),
+                        ],
+                  ),
                 ),
-              ),
 
               // ==========================================
               // CARD: TENTANG TAHAP 1
@@ -372,34 +544,38 @@ class _Tahap1PageState extends State<Tahap1Page> {
 
   // Helper Widget untuk Bar Persentase
   Widget _buildProgressRow(String title, double value) {
-    double total = _totalInput > 0 ? _totalInput : 1;
-    double percentage = value / total;
-    String percentText = '${(percentage * 100).toStringAsFixed(1)}%';
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-              Text(percentText, style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: percentage,
-              minHeight: 6,
-              backgroundColor: Colors.grey.shade100,
-              valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-            ),
-          ),
-        ],
-      ),
-    );
+  double percentage;
+
+  if (_hasilSmart != null) {
+    // data dari API sudah ternormalisasi
+    percentage = value;
+  } else {
+    // sebelum hitung masih pakai slider
+    percentage = value / _totalInput;
   }
+
+  String percentText =
+      '${(percentage * 100).toStringAsFixed(1)}%';
+
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title),
+            Text(percentText),
+          ],
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: percentage,
+        ),
+      ],
+    ),
+  );
+}
 }
